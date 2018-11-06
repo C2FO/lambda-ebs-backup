@@ -1,0 +1,40 @@
+Resources:
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: "Allow"
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Policies:
+      - PolicyName: lambda-logs
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: Allow
+            Action:
+            - "logs:CreateLogGroup"
+            - "logs:CreateLogStream"
+            - "logs:PutLogEvents"
+            - "logs:DescribeLogStreams"
+            Resource:
+            - "arn:aws:logs:*:*:*"
+      - PolicyName: lambda-create-ebs-backup-policy
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: Allow
+            Action:
+            - "ec2:CreateSnapshot"
+            - "ec2:DescribeVolumes"
+            Resource: "*"
+      RoleName: lambda-ebs-backup
+Outputs:
+  RoleArn:
+    Description: Arn to use for lambda function creation
+    Value: !GetAtt LambdaRole.Arn
