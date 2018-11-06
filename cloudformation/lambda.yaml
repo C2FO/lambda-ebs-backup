@@ -1,0 +1,63 @@
+Parameters:
+  LambdaRoleArn:
+    Type: String
+    Description: The ARN of the IAM Role that the lambda function will run as.
+  LambdaMemory:
+    Type: Number
+    Default: 512
+    Description: The amount of memory in MB to give to the lambda function
+  LambdaRate:
+    Type: String
+    Description: |
+      The ScheduleExpression for running the lambda-ebs-backup.
+      See https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html.
+      Defaults to every Fridy at 9:30 p.m UTC.
+    Default: cron(30 21 ? * FRI *)
+  S3Bucket:
+    Type: String
+    Description: The S3 Bucket where the labmda code is stored
+  S3Key:
+    Type: String
+    Description: The S3 Key where the lambda code zip is stored
+  S3ObjectVersionId:
+    Type: String
+    Description: The version of the S3 lambda code zip
+  Timeout:
+    Type: Number
+    Default: 90
+    Description: The timeout for the lambda-ebs-backup job
+
+Resources:
+  LambdaBackupFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Ref S3Bucket
+        S3Key: !Ref S3Key
+        S3ObjectVersion: !Ref S3ObjectVersionId
+      Description: EBS Backup Job
+      FunctionName: lambda-ebs-backup
+      Handler: lambda-ebs-backup
+      MemorySize: !Ref LambdaMemory
+      Role: !Ref LambdaRoleArn
+      Runtime: go1.x
+      Tags:
+      - Key: cost
+        Value: lambda-ebs-backup
+      Timeout: !Ref Timeout
+  LambdaEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Run scheduled lambda-ebs-backup
+      Name: lambda-ebs-backup-cron
+      ScheduleExpression: !Ref LambdaRate
+      Targets:
+      - Id: lambda-ebs-backup
+        Arn: !GetAtt LambdaBackupFunction.Arn
+  LambdaEventPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !GetAtt LambdaBackupFunction.Arn
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt LambdaEventRule.Arn
