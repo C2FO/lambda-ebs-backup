@@ -59,3 +59,9 @@ Finally, you can create the lambda function like so:
 ```
 make create-lambda-ebs-backup
 ```
+
+### Tagging Volumes for backup
+
+In order to backup a volume, you must opt in by setting a tag key:value pair on
+the volume. By default, this is `lambda-ebs-backup:true`. This tells the lambda
+function that we are to create a snapshot of the volume.

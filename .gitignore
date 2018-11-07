@@ -1,2 +1,6 @@
 
 vendor/
+
+# Don't checking user's local environment file which will be used for storing
+# configuration unique to their enviornment.
+.env
