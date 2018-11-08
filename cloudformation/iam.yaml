@@ -36,6 +36,15 @@ Resources:
             - "ec2:CreateImage"
             - "ec2:CreateSnapshot"
             Resource: "*"
+      - PolicyName: lambda-delete-ebs-backup-policy
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: Allow
+            Action:
+            - "ec2:DeleteSnapshot"
+            - "ec2:DeregisterImage"
+            Resource: "*"
       RoleName: lambda-ebs-backup
 Outputs:
   RoleArn:
