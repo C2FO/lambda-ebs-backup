@@ -280,7 +280,7 @@ func (m *Manager) formatImageName(i *ec2.Instance) (string, error) {
 	tags := utils.TagSliceToMap(i.Tags)
 	instanceIDString := aws.StringValue(i.InstanceId)
 
-	// User has supplied a template overide for naming the image. We'll need to
+	// User has supplied a template override for naming the image. We'll need to
 	// template it out.
 	if templateString, ok := tags.Get(m.ImageNameTag); ok {
 		templateName := fmt.Sprintf("image-name-%s", instanceIDString)

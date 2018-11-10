@@ -48,7 +48,7 @@ func ImageNameTag() string {
 	return envDefault("IMAGE_NAME_TAG", "lambda-ebs-backup/image-name")
 }
 
-// DefaultImageNameFormat is the default template to use for nameing ec2 images
+// DefaultImageNameFormat is the default template to use for naming ec2 images
 // if a tag is not found. By default, we will use the name of the Instance
 // postfixed with the date.
 func DefaultImageNameFormat() string {
