@@ -14,16 +14,18 @@ import (
 
 // ManagerOpts are options to configure the backup manager
 type ManagerOpts struct {
-	Client *ec2.EC2
+	client *ec2.EC2
 
-	BackupTagKey   string
-	BackupTagValue string
-	ImageTagKey    string
-	ImageTagValue  string
-	ImageNameTag   string
+	BackupTagKey     string
+	BackupTagValue   string
+	ImageTagKey      string
+	ImageTagValue    string
+	ImageNameTag     string
+	RebootOnImageTag string
 
 	DefaultImageNameTemplate *template.Template
 	DefaultMaxKeepImages     int
+	DefaultRebootOnImage     bool
 
 	Verbose bool
 }
@@ -33,13 +35,16 @@ type ManagerOpts struct {
 func NewManagerOptsFromConfig(client *ec2.EC2) (*ManagerOpts, error) {
 	var err error
 	opts := &ManagerOpts{
-		Client:         client,
-		BackupTagKey:   config.BackupTagKey(),
-		BackupTagValue: config.BackupTagValue(),
-		ImageTagKey:    config.ImageTagKey(),
-		ImageTagValue:  config.ImageTagValue(),
-		ImageNameTag:   config.ImageNameTag(),
-		Verbose:        true,
+		client:           client,
+		BackupTagKey:     config.BackupTagKey(),
+		BackupTagValue:   config.BackupTagValue(),
+		ImageTagKey:      config.ImageTagKey(),
+		ImageTagValue:    config.ImageTagValue(),
+		ImageNameTag:     config.ImageNameTag(),
+		RebootOnImageTag: config.RebootOnImageTag(),
+		Verbose:          true,
+
+		DefaultRebootOnImage: config.DefaultRebootOnImage(),
 	}
 
 	opts.DefaultImageNameTemplate, err = template.New("default-image-name").Parse(config.DefaultImageNameFormat())
@@ -53,22 +58,10 @@ func NewManagerOptsFromConfig(client *ec2.EC2) (*ManagerOpts, error) {
 
 // Manager manages backups/images of ec2 resources(volumes, instances, etc.)
 type Manager struct {
-	client *ec2.EC2
+	*ManagerOpts
 
 	volumes   []*ec2.Volume
 	instances []*ec2.Instance
-
-	BackupTagKey     string
-	BackupTagValue   string
-	ImageTagKey      string
-	ImageTagValue    string
-	ImageNameTag     string
-	MaxKeepImagesTag string
-
-	DefaultImageNameTemplate *template.Template
-	DefaultMaxKeepImages     int
-
-	Verbose bool
 }
 
 // NewManager creates a new backup manager from the provided options
@@ -77,19 +70,12 @@ func NewManager(opts *ManagerOpts) (*Manager, error) {
 		volumes:   make([]*ec2.Volume, 0),
 		instances: make([]*ec2.Instance, 0),
 	}
-	m.client = opts.Client
-	m.BackupTagKey = opts.BackupTagKey
-	m.BackupTagValue = opts.BackupTagValue
-	m.ImageTagKey = opts.ImageTagKey
-	m.ImageTagValue = opts.ImageTagValue
-	m.ImageNameTag = opts.ImageNameTag
-	m.Verbose = opts.Verbose
+
 	if opts.DefaultImageNameTemplate == nil {
 		return nil, fmt.Errorf("DefaultImageNameTemplate is a required field for ManagerOpts")
 	}
 
-	m.DefaultImageNameTemplate = opts.DefaultImageNameTemplate
-	m.DefaultMaxKeepImages = opts.DefaultMaxKeepImages
+	m.ManagerOpts = opts
 	return m, nil
 }
 
@@ -217,6 +203,7 @@ func (m *Manager) backupInstances() error {
 			image, err := m.client.CreateImage(&ec2.CreateImageInput{
 				InstanceId: i.InstanceId,
 				Name:       aws.String(imageName),
+				NoReboot:   aws.Bool(!m.instanceRebootParam(i)),
 			})
 			if err != nil {
 				m.logf(
@@ -298,6 +285,19 @@ func (m *Manager) formatImageName(i *ec2.Instance) (string, error) {
 	// Execute the template
 	err = nameTemplate.Execute(&buf, newImageNameTemplateContext(i))
 	return buf.String(), err
+}
+
+func (m *Manager) instanceRebootParam(i *ec2.Instance) bool {
+	tags := utils.TagSliceToMap(i.Tags)
+	if rebootVal, ok := tags.Get(m.RebootOnImageTag); ok {
+		for _, v := range []string{"true", "True", "TRUE"} {
+			if rebootVal == v {
+				return true
+			}
+		}
+		return false
+	}
+	return m.DefaultRebootOnImage
 }
 
 func (m *Manager) log(v ...interface{}) {

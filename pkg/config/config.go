@@ -17,6 +17,20 @@ func envDefaultInt(key, defaultValue string) (int, error) {
 	return strconv.Atoi(envDefault(key, defaultValue))
 }
 
+func envDefaultBool(key string, defaultValue bool) bool {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+
+	for _, v := range []string{"true", "True", "TRUE"} {
+		if value == v {
+			return true
+		}
+	}
+	return false
+}
+
 // BackupTagKey is the volume tag key to look for when determing if we should
 // perform a backup or not.
 func BackupTagKey() string {
@@ -61,8 +75,22 @@ func MaxKeepImagesTag() string {
 	return envDefault("MAX_KEEP_IMAGES_TAG", "lambda-ebs-backup/max-keep-images")
 }
 
-// MaxKeepImagesDefault is the default number of images to keep if not specified
+// DefaultMaxKeepImages is the default number of images to keep if not specified
 // on the instance via the MaxKeepImagesTag
 func DefaultMaxKeepImages() (int, error) {
 	return envDefaultInt("DEFAULT_MAX_KEEP_IMAGES", "2")
+}
+
+// RebootOnImageTag returns the name of the EC2 tag to look at to see if the
+// instance should be rebooted or not when an image is made. If not supplied,
+// the value will default to that of "DEFAULT_REBOOT_ON_IMAGE"
+func RebootOnImageTag() string {
+	return envDefault("REBOOT_ON_IMAGE_TAG", "lambda-ebs-backup/reboot-on-image")
+}
+
+// DefaultRebootOnImage determines the default behavior for rebooting when we
+// take an image of an ec2 instance. If not specified, it defaults to true as
+// this is the aws CreateImage default.
+func DefaultRebootOnImage() bool {
+	return envDefaultBool("DEFAULT_REBOOT_ON_IMAGE", true)
 }
