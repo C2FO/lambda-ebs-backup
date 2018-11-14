@@ -30,8 +30,11 @@ Resources:
           Statement:
           - Effect: Allow
             Action:
-            - "ec2:CreateSnapshot"
+            - "ec2:DescribeInstances"
+            - "ec2:DescribeImages"
             - "ec2:DescribeVolumes"
+            - "ec2:CreateImage"
+            - "ec2:CreateSnapshot"
             Resource: "*"
       RoleName: lambda-ebs-backup
 Outputs:

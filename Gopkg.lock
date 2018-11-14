@@ -45,17 +45,35 @@
     "service/ec2",
     "service/sts"
   ]
-  revision = "fa9217848bf00ff03c3c097e9c109cbe833ea130"
-  version = "v1.15.69"
+  revision = "b20851c3cbaede4743ba0672171623986539f0b4"
+  version = "v1.15.70"
+
+[[projects]]
+  name = "github.com/davecgh/go-spew"
+  packages = ["spew"]
+  revision = "8991bc29aa16c548c550c7ff78260e27b9ab7c73"
+  version = "v1.1.1"
 
 [[projects]]
   name = "github.com/jmespath/go-jmespath"
   packages = ["."]
   revision = "0b12d6b5"
 
+[[projects]]
+  name = "github.com/pmezard/go-difflib"
+  packages = ["difflib"]
+  revision = "792786c7400a136282c1664665ae0a8db921c6c2"
+  version = "v1.0.0"
+
+[[projects]]
+  name = "github.com/stretchr/testify"
+  packages = ["assert"]
+  revision = "f35b8ab0b5a2cef36673838d662e249dd9c94686"
+  version = "v1.2.2"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0b88b9c03762c18e86be6aa62556e94f7f54e8dbdd4baa1f6384eb4a844fe200"
+  inputs-digest = "7c1efb0b80fc1d391e52c7655662192a8b979eebb44d543afcc3d2dbcfeaff41"
   solver-name = "gps-cdcl"
   solver-version = 1
