@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"strconv"
+	"strings"
 )
 
 func envDefault(key, defaultValue string) string {
@@ -23,10 +24,8 @@ func envDefaultBool(key string, defaultValue bool) bool {
 		return defaultValue
 	}
 
-	for _, v := range []string{"true", "True", "TRUE"} {
-		if value == v {
-			return true
-		}
+	if strings.ToUpper(value) == "TRUE" {
+		return true
 	}
 	return false
 }
