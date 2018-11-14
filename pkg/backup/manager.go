@@ -21,6 +21,8 @@ type ManagerOpts struct {
 	ImageTagKey      string
 	ImageTagValue    string
 	ImageNameTag     string
+	ManagedTagKey    string
+	ManagedTagValue  string
 	RebootOnImageTag string
 
 	DefaultImageNameTemplate *template.Template
@@ -41,6 +43,8 @@ func NewManagerOptsFromConfig(client *ec2.EC2) (*ManagerOpts, error) {
 		ImageTagKey:      config.ImageTagKey(),
 		ImageTagValue:    config.ImageTagValue(),
 		ImageNameTag:     config.ImageNameTag(),
+		ManagedTagKey:    config.ManagedTagKey(),
+		ManagedTagValue:  config.ManagedTagValue(),
 		RebootOnImageTag: config.RebootOnImageTag(),
 		Verbose:          true,
 
@@ -165,12 +169,32 @@ func (m *Manager) backupVolumes() error {
 			if err != nil {
 				m.logf("Error creating snapshot for volume '%s'\n", aws.StringValue(v.VolumeId))
 				errorChan <- err
-			} else {
-				m.logf("Created snapshot '%s' for volume '%s'\n",
+				return
+			}
+
+			m.logf("Created snapshot '%s' for volume '%s'\n",
+				aws.StringValue(snap.SnapshotId),
+				aws.StringValue(v.VolumeId),
+			)
+
+			err = m.addManagmentTags(
+				[]*string{snap.SnapshotId},
+				map[string]string{
+					"lambda-ebs-backup/volume-id": aws.StringValue(v.VolumeId),
+				},
+			)
+
+			if err != nil {
+				m.logf("Error adding management tag to snapshot '%s'(%s)\n",
 					aws.StringValue(snap.SnapshotId),
 					aws.StringValue(v.VolumeId),
 				)
+				errorChan <- err
+				return
 			}
+
+			m.logf("Added management tag for snapshot '%s'\n", aws.StringValue(snap.SnapshotId))
+
 		}(volume)
 	}
 
@@ -222,6 +246,27 @@ func (m *Manager) backupInstances() error {
 				aws.StringValue(i.InstanceId),
 				tags.GetDefault("Name", ""),
 			)
+
+			err = m.addManagmentTags(
+				[]*string{image.ImageId},
+				map[string]string{
+					"lambda-ebs-backup/instance-id": aws.StringValue(i.InstanceId),
+				},
+			)
+
+			if err != nil {
+				m.logf("Error adding management tag for image '%s'(%s)\n",
+					aws.StringValue(image.ImageId),
+					imageName,
+				)
+				errorChan <- err
+				return
+			}
+
+			m.logf("Added management tag for image '%s'(%s)\n",
+				aws.StringValue(image.ImageId),
+				imageName,
+			)
 		}(instance)
 	}
 
@@ -234,6 +279,50 @@ func (m *Manager) backupInstances() error {
 	}
 
 	return nil
+}
+
+// Cleanup cleans up old volume snapshots and images
+func (m *Manager) Cleanup() error {
+	return m.all(
+		[]func() error{
+			m.cleanupSnapshots,
+			m.cleanupImages,
+		},
+	)
+}
+
+func (m *Manager) cleanupSnapshots() error {
+	m.logf("Starting cleanup of old ebs snapshots")
+	return nil
+}
+
+func (m *Manager) cleanupImages() error {
+	m.logf("Starting cleanup of old AMIs")
+	return nil
+}
+
+func (m *Manager) addManagmentTags(resources []*string, extraTags map[string]string) error {
+
+	tags := []*ec2.Tag{
+		&ec2.Tag{
+			Key:   aws.String(m.ManagerOpts.ManagedTagKey),
+			Value: aws.String(m.ManagerOpts.ManagedTagValue),
+		},
+	}
+	if extraTags != nil {
+		for k, v := range extraTags {
+			tags = append(tags, &ec2.Tag{
+				Key:   aws.String(k),
+				Value: aws.String(v),
+			})
+		}
+	}
+
+	_, err := m.client.CreateTags(&ec2.CreateTagsInput{
+		Resources: resources,
+		Tags:      tags,
+	})
+	return err
 }
 
 func (m *Manager) all(funcs []func() error) error {

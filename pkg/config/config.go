@@ -93,3 +93,15 @@ func RebootOnImageTag() string {
 func DefaultRebootOnImage() bool {
 	return envDefaultBool("DEFAULT_REBOOT_ON_IMAGE", true)
 }
+
+// ManagedTagKey will get added to all resources created by the backup so we
+// can search for them later for things like auditing and cleaning up backups
+func ManagedTagKey() string {
+	return envDefault("MANAGED_TAG_KEY", "lambda-ebs-backup/managed")
+}
+
+// ManagedTagValue is the value that corresponds to the ManagedTagKey that gets
+// added to all resources created by backup.
+func ManagedTagValue() string {
+	return envDefault("MANAGED_TAG_VALUE", "true")
+}
