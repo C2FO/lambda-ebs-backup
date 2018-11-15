@@ -30,13 +30,14 @@ Resources:
           Statement:
           - Effect: Allow
             Action:
-            - "ec2:DescribeInstances"
-            - "ec2:DescribeImages"
-            - "ec2:DescribeVolumes"
             - "ec2:CreateImage"
             - "ec2:CreateSnapshot"
-            - "ec2:DescribeTags"
             - "ec2:CreateTags"
+            - "ec2:DescribeImages"
+            - "ec2:DescribeInstances"
+            - "ec2:DescribeSnapshots"
+            - "ec2:DescribeTags"
+            - "ec2:DescribeVolumes"
             Resource: "*"
       - PolicyName: lambda-delete-ebs-backup-policy
         PolicyDocument:
