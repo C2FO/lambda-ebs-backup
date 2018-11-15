@@ -89,3 +89,10 @@ by setting the environment variable `DEFAULT_MAX_KEEP_IMAGES` in the
 cloudformation for the lambda function. Alternatively, you can control this on
 an instance by instance basis by setting the following tag key:value pair on the
 instance: `lambda-ebs-backup/max-keep-images`.
+
+#### Controlling reboot behvior for images.
+
+By default, we will reboot the instance when creating an image of it. However,
+you might prefer that the instance does not reboot and wish to chance it on
+filesystem integrity. You can allow this by setting the tag key:value pair to
+`lambda-ebs-backup/reboot-on-image:false` on your instance.
