@@ -80,6 +80,18 @@ func DefaultMaxKeepImages() (int, error) {
 	return envDefaultInt("DEFAULT_MAX_KEEP_IMAGES", "2")
 }
 
+// MaxKeepSnapshotsTag is the tag to look at for the maximum number of snapshots
+// to keep for a volume.
+func MaxKeepSnapshotsTag() string {
+	return envDefault("MAX_KEEP_SNAPSHOTS_TAG", "lambda-ebs-backup/max-keep-snapshots")
+}
+
+// DefaultMaxKeepSnapshots is the default number of snapshots to keep for a
+// volume if not specified on the volume via the MaxKeepSnapshotsTag.
+func DefaultMaxKeepSnapshots() (int, error) {
+	return envDefaultInt("DEFAULT_MAX_KEEP_SNAPSHOTS", "2")
+}
+
 // RebootOnImageTag returns the name of the EC2 tag to look at to see if the
 // instance should be rebooted or not when an image is made. If not supplied,
 // the value will default to that of "DEFAULT_REBOOT_ON_IMAGE"
