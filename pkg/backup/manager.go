@@ -36,11 +36,13 @@ type ManagerOpts struct {
 	MaxKeepImagesTag    string
 	MaxKeepSnapshotsTag string
 	RebootOnImageTag    string
+	SnapshotNameTag     string
 
-	DefaultImageNameTemplate *template.Template
-	DefaultMaxKeepImages     int
-	DefaultMaxKeepSnapshots  int
-	DefaultRebootOnImage     bool
+	DefaultImageNameTemplate    *template.Template
+	DefaultMaxKeepImages        int
+	DefaultMaxKeepSnapshots     int
+	DefaultRebootOnImage        bool
+	DefaultSnapshotNameTemplate *template.Template
 
 	Verbose bool
 }
@@ -61,12 +63,18 @@ func NewManagerOptsFromConfig(client *ec2.EC2) (*ManagerOpts, error) {
 		MaxKeepImagesTag:    config.MaxKeepImagesTag(),
 		MaxKeepSnapshotsTag: config.MaxKeepSnapshotsTag(),
 		RebootOnImageTag:    config.RebootOnImageTag(),
+		SnapshotNameTag:     config.SnapshotNameTag(),
 		Verbose:             true,
 
 		DefaultRebootOnImage: config.DefaultRebootOnImage(),
 	}
 
 	opts.DefaultImageNameTemplate, err = template.New("default-image-name").Parse(config.DefaultImageNameFormat())
+	if err != nil {
+		return opts, err
+	}
+
+	opts.DefaultSnapshotNameTemplate, err = template.New("default-snapshot-name").Parse(config.DefaultSnapshotNameFormat())
 	if err != nil {
 		return opts, err
 	}
@@ -182,6 +190,12 @@ func (m *Manager) Backup() error {
 
 func (m *Manager) backupVolumes() error {
 	return m.asyncMapVolumes(func(v *ec2.Volume) error {
+
+		snapName, err := m.formatSnapshotName(v)
+		if err != nil {
+			return err
+		}
+
 		snap, err := m.client.CreateSnapshot(&ec2.CreateSnapshotInput{
 			VolumeId: v.VolumeId,
 		})
@@ -198,6 +212,7 @@ func (m *Manager) backupVolumes() error {
 		err = m.addManagmentTags(
 			[]*string{snap.SnapshotId},
 			map[string]string{
+				"Name":              snapName,
 				VolumeIdentifierTag: aws.StringValue(v.VolumeId),
 			},
 		)
@@ -532,6 +547,29 @@ func (m *Manager) formatImageName(i *ec2.Instance) (string, error) {
 	var buf bytes.Buffer
 	// Execute the template
 	err = nameTemplate.Execute(&buf, newImageNameTemplateContext(i))
+	return buf.String(), err
+}
+
+func (m *Manager) formatSnapshotName(v *ec2.Volume) (string, error) {
+	var nameTemplate *template.Template
+	var err error
+	tags := utils.TagSliceToMap(v.Tags)
+	volumeIDString := aws.StringValue(v.VolumeId)
+
+	if templateString, ok := tags.Get(m.ManagerOpts.SnapshotNameTag); ok {
+		templateName := fmt.Sprintf("snapshot-name-%s", volumeIDString)
+		m.logf("Using custom snapshot name template for volume '%s'\n", volumeIDString)
+		nameTemplate, err = template.New(templateName).Parse(templateString)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		m.logf("Using DefaultSnapshotNameTemplate for volume '%s'\n", volumeIDString)
+		nameTemplate = m.ManagerOpts.DefaultSnapshotNameTemplate
+	}
+
+	var buf bytes.Buffer
+	err = nameTemplate.Execute(&buf, newSnapshotNameTemplateContext(v))
 	return buf.String(), err
 }
 

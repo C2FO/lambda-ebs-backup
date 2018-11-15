@@ -68,6 +68,19 @@ func DefaultImageNameFormat() string {
 	return envDefault("DEFAULT_IMAGE_NAME_FORMAT", "{{.Name}}-{{.Date}}")
 }
 
+// SnapshotNameTag is the tag to look for on volumes that decides how a snapshot
+// will be named. This tag supports a GO Template and overrides the default
+// SnapshotNameFormat on an volume by volume basis.
+func SnapshotNameTag() string {
+	return envDefault("SNAPSHOT_NAME_TAG", "lambda-ebs-backup/snapshot-name")
+}
+
+// DefaultSnapshotNameFormat is the default format for a snapshot's name if
+// one is not supplied on the volume.
+func DefaultSnapshotNameFormat() string {
+	return envDefault("DEFAULT_SNAPSHOT_NAME_FORMAT", "{{.Name}}-{{.Date}}")
+}
+
 // MaxKeepImagesTag is the tag to look at for the maximum number of images to
 // keep for an instance.
 func MaxKeepImagesTag() string {
