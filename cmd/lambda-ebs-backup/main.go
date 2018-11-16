@@ -30,12 +30,15 @@ func HandleRequest(ctx context.Context) error {
 		return err
 	}
 
-	err = backupManager.Search()
-	if err != nil {
+	if err = backupManager.Search(); err != nil {
 		return err
 	}
 
 	if err = backupManager.Backup(); err != nil {
+		return err
+	}
+
+	if err = backupManager.Cleanup(); err != nil {
 		return err
 	}
 

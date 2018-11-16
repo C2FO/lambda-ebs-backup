@@ -68,6 +68,19 @@ func DefaultImageNameFormat() string {
 	return envDefault("DEFAULT_IMAGE_NAME_FORMAT", "{{.Name}}-{{.Date}}")
 }
 
+// SnapshotNameTag is the tag to look for on volumes that decides how a snapshot
+// will be named. This tag supports a GO Template and overrides the default
+// SnapshotNameFormat on an volume by volume basis.
+func SnapshotNameTag() string {
+	return envDefault("SNAPSHOT_NAME_TAG", "lambda-ebs-backup/snapshot-name")
+}
+
+// DefaultSnapshotNameFormat is the default format for a snapshot's name if
+// one is not supplied on the volume.
+func DefaultSnapshotNameFormat() string {
+	return envDefault("DEFAULT_SNAPSHOT_NAME_FORMAT", "{{.Name}}-{{.Date}}")
+}
+
 // MaxKeepImagesTag is the tag to look at for the maximum number of images to
 // keep for an instance.
 func MaxKeepImagesTag() string {
@@ -78,6 +91,18 @@ func MaxKeepImagesTag() string {
 // on the instance via the MaxKeepImagesTag
 func DefaultMaxKeepImages() (int, error) {
 	return envDefaultInt("DEFAULT_MAX_KEEP_IMAGES", "2")
+}
+
+// MaxKeepSnapshotsTag is the tag to look at for the maximum number of snapshots
+// to keep for a volume.
+func MaxKeepSnapshotsTag() string {
+	return envDefault("MAX_KEEP_SNAPSHOTS_TAG", "lambda-ebs-backup/max-keep-snapshots")
+}
+
+// DefaultMaxKeepSnapshots is the default number of snapshots to keep for a
+// volume if not specified on the volume via the MaxKeepSnapshotsTag.
+func DefaultMaxKeepSnapshots() (int, error) {
+	return envDefaultInt("DEFAULT_MAX_KEEP_SNAPSHOTS", "2")
 }
 
 // RebootOnImageTag returns the name of the EC2 tag to look at to see if the
@@ -92,4 +117,16 @@ func RebootOnImageTag() string {
 // this is the aws CreateImage default.
 func DefaultRebootOnImage() bool {
 	return envDefaultBool("DEFAULT_REBOOT_ON_IMAGE", true)
+}
+
+// ManagedTagKey will get added to all resources created by the backup so we
+// can search for them later for things like auditing and cleaning up backups
+func ManagedTagKey() string {
+	return envDefault("MANAGED_TAG_KEY", "lambda-ebs-backup/managed")
+}
+
+// ManagedTagValue is the value that corresponds to the ManagedTagKey that gets
+// added to all resources created by backup.
+func ManagedTagValue() string {
+	return envDefault("MANAGED_TAG_VALUE", "true")
 }
