@@ -23,7 +23,7 @@ Resources:
             - "logs:PutLogEvents"
             - "logs:DescribeLogStreams"
             Resource:
-            - "arn:aws:logs:*:*:*"
+            - !Sub "arn:${AWS::Partition}:logs:*:*:*"
       - PolicyName: lambda-create-ebs-backup-policy
         PolicyDocument:
           Version: "2012-10-17"
