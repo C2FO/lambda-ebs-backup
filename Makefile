@@ -1,3 +1,5 @@
+test:
+	go test -v -race ./...
 
 create-iam-role:
 	$(MAKE) -C cloudformation create-iam-role
