@@ -1,0 +1,15 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    name: Test (go ${{ matrix.go_version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: true
+      matrix:
+        go_version: [1.16, 1.17]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-go@v2
+    - run: make test
